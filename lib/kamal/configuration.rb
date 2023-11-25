@@ -6,7 +6,7 @@ require "erb"
 require "net/ssh/proxy/jump"
 
 class Kamal::Configuration
-  delegate :service, :image, :servers, :env, :labels, :registry, :stop_wait_time, :hooks_path, :logging, to: :raw_config, allow_nil: true
+  delegate :service, :image, :servers, :env, :labels, :registry, :stop_wait_time, :hooks_path, :logging, :volumes, to: :raw_config, allow_nil: true
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config
@@ -129,8 +129,8 @@ class Kamal::Configuration
 
 
   def volume_args
-    if raw_config.volumes.present?
-      argumentize "--volume", raw_config.volumes
+    if volumes.present?
+      argumentize "--volume", volumes
     else
       []
     end

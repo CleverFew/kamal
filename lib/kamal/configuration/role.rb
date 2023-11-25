@@ -1,11 +1,13 @@
-class Kamal::Configuration::Role
+class Kamal::Configuration::Role < Kamal::Configuration::ContainerBase
   CORD_FILE = "cord"
-  delegate :argumentize, :optionize, to: Kamal::Utils
-
-  attr_accessor :name
 
   def initialize(name, config:)
-   @name, @config = name.inquiry, config
+    @delegate_config =
+      unless config.servers.is_a?(Array) || config.servers[name].is_a?(Array)
+        config.servers[name]
+      end
+
+    super(name, config: config)
   end
 
   def primary_host
@@ -17,11 +19,11 @@ class Kamal::Configuration::Role
   end
 
   def cmd
-    specializations["cmd"]
+    delegate_config["cmd"]
   end
 
   def option_args
-    if args = specializations["options"]
+    if args = delegate_config["options"]
       optionize args
     else
       []
@@ -35,19 +37,6 @@ class Kamal::Configuration::Role
   def label_args
     argumentize "--label", labels
   end
-
-  def logging_args
-    args = config.logging || {}
-    args.deep_merge!(specializations['logging']) if specializations['logging'].present?
-
-    if args.any?
-      optionize({ "log-driver" => args["driver"] }.compact) +
-        argumentize("--log-opt", args["options"])
-    else
-      config.logging_args
-    end
-  end
-
 
   def env
     if config.env && config.env["secret"]
@@ -105,10 +94,10 @@ class Kamal::Configuration::Role
 
 
   def running_traefik?
-    if specializations["traefik"].nil?
+    if delegate_config["traefik"].nil?
       primary?
     else
-      specializations["traefik"]
+      delegate_config["traefik"]
     end
   end
 
@@ -156,7 +145,7 @@ class Kamal::Configuration::Role
 
 
   def asset_path
-    specializations["asset_path"] || config.asset_path
+    delegate_config["asset_path"] || config.asset_path
   end
 
   def assets?
@@ -179,7 +168,6 @@ class Kamal::Configuration::Role
   end
 
   private
-    attr_accessor :config
 
     def extract_hosts_from_config
       if config.servers.is_a?(Array)
@@ -219,23 +207,12 @@ class Kamal::Configuration::Role
       [ config.service, name, config.destination ].compact.join("-")
     end
 
-    def custom_labels
-      Hash.new.tap do |labels|
-        labels.merge!(config.labels) if config.labels.present?
-        labels.merge!(specializations["labels"]) if specializations["labels"].present?
-      end
-    end
-
-    def specializations
-      if config.servers.is_a?(Array) || config.servers[name].is_a?(Array)
-        { }
-      else
-        config.servers[name].except("hosts")
-      end
-    end
+     def custom_labels
+      specializations('labels') || {}
+     end
 
     def specialized_env
-      specializations["env"] || {}
+      delegate_config["env"] || {}
     end
 
     def merged_env
@@ -261,7 +238,7 @@ class Kamal::Configuration::Role
 
     def health_check_options
       @health_check_options ||= begin
-        options = specializations["healthcheck"] || {}
+        options = delegate_config["healthcheck"] || {}
         options = config.healthcheck.merge(options) if running_traefik?
         options
       end
