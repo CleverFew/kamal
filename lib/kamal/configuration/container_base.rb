@@ -1,13 +1,10 @@
-require "active_support/core_ext/hash/deep_merge"
-
 class Kamal::Configuration::ContainerBase
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_accessor :name
 
-  def initialize(name, config:)
-    @name, @config = name.inquiry, config
-    @delegate_config ||= config.raw_config[name]
+  def initialize(name, config:, delegate_config:)
+    @name, @config, @delegate_config = name.inquiry, config, delegate_config
   end
 
   def logging_args

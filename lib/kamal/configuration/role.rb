@@ -2,12 +2,12 @@ class Kamal::Configuration::Role < Kamal::Configuration::ContainerBase
   CORD_FILE = "cord"
 
   def initialize(name, config:)
-    @delegate_config =
+    delegate_config =
       unless config.servers.is_a?(Array) || config.servers[name].is_a?(Array)
         config.servers[name]
       end
 
-    super(name, config: config)
+    super(name, config: config, delegate_config: delegate_config)
   end
 
   def primary_host

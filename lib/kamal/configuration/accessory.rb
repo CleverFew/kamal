@@ -1,7 +1,6 @@
 class Kamal::Configuration::Accessory < Kamal::Configuration::ContainerBase
   def initialize(name, config:)
-    @delegate_config = config.raw_config["accessories"][name]
-    super(name, config: config)
+    super(name, config: config, delegate_config: config.raw_config["accessories"][name])
   end
 
   def service_name
