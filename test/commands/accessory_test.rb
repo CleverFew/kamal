@@ -69,6 +69,15 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:busybox).run.join(" ")
   end
 
+  test "run with specific logging config" do
+    @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
+    @config[:logging] = { "driver" => "json-file", "options" => { "max-size" => "10m" } }
+
+    assert_equal \
+      "docker run --name app-busybox --detach --restart unless-stopped --log-driver \"json-file\" --log-opt max-size=\"10m\" --log-opt max-file=\"3\" --env-file .kamal/env/accessories/app-busybox.env --label service=\"app-busybox\" busybox:latest",
+      new_command(:busybox).run.join(" ")
+  end
+
   test "start" do
     assert_equal \
       "docker container start app-mysql",
